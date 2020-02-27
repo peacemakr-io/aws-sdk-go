@@ -8,6 +8,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/peacemakr-io/peacemakr-go-sdk/pkg/tools"
 )
 
 // An UnixTime provides aliasing of time.Time into a type that when marshaled
@@ -162,6 +163,26 @@ func Marshal(in interface{}) (*dynamodb.AttributeValue, error) {
 // This is useful for DynamoDB APIs such as PutItem.
 func MarshalMap(in interface{}) (map[string]*dynamodb.AttributeValue, error) {
 	av, err := NewEncoder().Encode(in)
+	if err != nil || av == nil || av.M == nil {
+		return map[string]*dynamodb.AttributeValue{}, err
+	}
+
+	return av.M, nil
+}
+
+// EncryptAndMarshalMap is an alias for Encrypting specified data using Peacemakr
+// and Marshal Data to a map of AttributeValues.
+//
+// This is useful for DynamoDB APIs such as PutItem
+func EncryptAndMarshalMap(data interface{}, cfg *tools.EncryptorConfig) (map[string]*dynamodb.AttributeValue, error) {
+	if cfg != nil {
+		encryptor, err := tools.NewEncryptor(cfg)
+		err = encryptor.Encrypt(data)
+		if err != nil {
+			return nil, err
+		}
+	}
+	av, err := NewEncoder().Encode(data)
 	if err != nil || av == nil || av.M == nil {
 		return map[string]*dynamodb.AttributeValue{}, err
 	}

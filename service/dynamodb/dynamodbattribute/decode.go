@@ -9,6 +9,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/peacemakr-io/peacemakr-go-sdk/pkg/tools"
 )
 
 // An Unmarshaler is an interface to provide custom unmarshaling of
@@ -86,6 +87,23 @@ func Unmarshal(av *dynamodb.AttributeValue, out interface{}) error {
 // The output value provided must be a non-nil pointer
 func UnmarshalMap(m map[string]*dynamodb.AttributeValue, out interface{}) error {
 	return NewDecoder().Decode(&dynamodb.AttributeValue{M: m}, out)
+}
+
+// UnmarshalMapAndDecrypt is an alias for Unmarshal which unmarshals from
+// a map of AttributeValues.
+//
+// The output value provided must be a non-nil pointer
+func UnmarshalMapAndDecrypt(m map[string]*dynamodb.AttributeValue, out interface{}, cfg *tools.EncryptorConfig) error {
+	if err := NewDecoder().Decode(&dynamodb.AttributeValue{M: m}, out); err != nil {
+		return nil
+	}
+
+	encryptor, err := tools.NewEncryptor(cfg)
+	err = encryptor.Decrypt(out)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // UnmarshalList is an alias for Unmarshal func which unmarshals
